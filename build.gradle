@@ -266,59 +266,51 @@ tasks.register("alt") {
         }
     }
 }
-tasks.register('history') {
-    group = 'lab'
-    description = 'Находит последнюю рабочую версию, проверяя коммиты через git'
+tasks.register("history") {
+    group = "laba"
+    description = "Поиск последней рабочей версии проекта и сохранение diff с первой неработающей"
 
     doLast {
-        def commits = []
-        def commitProcess = "git log --pretty=format:%H".execute()
-        commitProcess.in.eachLine { line -> commits.add(line) }
-        commitProcess.waitFor()
+        def revisions = "git rev-list HEAD".execute().text.readLines()
+        def lastWorkingRevision = null
 
-        if (commits.empty) {
-            throw new GradleException("Не найдено коммитов в репозитории")
-        }
+        for (String revision in revisions) {
+            println "Проверяем ревизию: ${revision.substring(0, 7)}..."
 
-        def lastWorkingCommit = null
-        def firstBrokenCommit = null
-        def currentBranch = "git rev-parse --abbrev-ref HEAD".execute().text.trim()
+            def checkoutStatus = ["git", "checkout", revision].execute().waitFor()
+            if (checkoutStatus != 0) {
+                println "Ошибка переключения на ревизию ${revision.substring(0, 7)}"
+                continue
+            }
 
-        try {
-            for (commit in commits) {
-                println "Проверяем коммит ${commit.substring(0, 7)}..."
+            try {
+                def compileResult = "cmd /c gradlew.bat labBuild".execute()
+                def compileStatus = compileResult.waitFor()
 
-                def checkoutProc = "git checkout $commit --force".execute()
-                checkoutProc.waitFor()
-
-                try {
-                    exec {
-                        commandLine 'gradle', 'compileJava'
-                        ignoreExitValue = false
-                    }
-                    lastWorkingCommit = commit
-                    println "✅ Успешная компиляция"
+                if (compileStatus == 0) {
+                    lastWorkingRevision = revision
+                    println "Ревизия ${revision.substring(0, 7)} успешно скомпилирована"
                     break
-                } catch (Exception e) {
-                    firstBrokenCommit = commit
-                    println "❌ Ошибка компиляции"
+                } else {
+                    throw new GradleException(compileResult.errorStream.text)
                 }
+            } catch (Exception e) {
+                println "Ошибка компиляции: ${e.message}"
             }
-
-            if (lastWorkingCommit && firstBrokenCommit) {
-                def diffFile = file("${buildDir}/broken-changes.diff")
-                def diffProc = "git diff $lastWorkingCommit $firstBrokenCommit".execute()
-                diffFile.text = diffProc.text
-                println "\nРезультат:"
-                println "Последняя рабочая версия: ${lastWorkingCommit.substring(0, 7)}"
-                println "Первая неработающая версия: ${firstBrokenCommit.substring(0, 7)}"
-                println "Diff сохранен в ${diffFile.absolutePath}"
-            }
-
-        } finally {
-            def returnProc = "git checkout $currentBranch --force".execute()
-            returnProc.waitFor()
-            println "\nВозврат на ветку: $currentBranch"
         }
+
+
+        def nextRevision = revisions[revisions.indexOf(lastWorkingRevision) - 1]
+
+        def diffText = ["git", "diff", lastWorkingRevision, nextRevision].execute().text
+
+
+        def diffFile = file("props/history/history.diff")
+        diffFile.parentFile.mkdirs()
+        diffFile.text = diffText
+
+        println "Последняя рабочая ревизия: ${lastWorkingRevision.substring(0, 7)}"
+        println "Первая неработающая ревизия: ${nextRevision.substring(0, 7)}"
+        println "Diff сохранен в: ${diffFile.absolutePath}"
     }
 }
