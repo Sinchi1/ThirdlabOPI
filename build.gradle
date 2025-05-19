@@ -266,8 +266,8 @@ tasks.register("alt") {
         }
     }
 }
-tasks.register("history") {
-    group = "laba"
+tasks.register("labHistory") {
+    group = "lab"
     description = "Поиск последней рабочей версии проекта и сохранение diff с первой неработающей"
 
     doLast {
