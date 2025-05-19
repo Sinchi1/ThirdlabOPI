@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f30a037f-f00b-484b-b363-ad71d2372871" name="Changes" comment="r7">
+    <list default="true" id="f30a037f-f00b-484b-b363-ad71d2372871" name="Changes" comment="last&amp;">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -57,7 +58,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="4df1cdc6124ecc19865eddd7acadb2cb70bc417a" />
+        <entry key="$PROJECT_DIR$" value="fec2718b18258821522249c4da347c4d517c6fb4" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -77,6 +78,8 @@
     "Gradle.ThirdlabOPI [Build].executor": "Run",
     "Gradle.ThirdlabOPI [compileCodeOfProject].executor": "Run",
     "Gradle.ThirdlabOPI [history].executor": "Run",
+    "Gradle.ThirdlabOPI [labHistory].executor": "Run",
+    "Gradle.ThirdlabOPI [labTeam].executor": "Run",
     "Gradle.ThirdlabOPI [team].executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -98,7 +101,7 @@
       <recent name="C:\ITMO\2 Курс\ОПИ\3 лаба\ThirdlabOPI\src\main\resources\mp3" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ThirdlabOPI [history]">
+  <component name="RunManager" selected="Gradle.ThirdlabOPI [labTeam]">
     <configuration name="ThirdlabOPI [BuildProject]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -143,28 +146,6 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ThirdlabOPI [compileCodeOfProject]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value="compileCodeOfProject" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>false</RunAsTest>
-      <method v="2" />
-    </configuration>
     <configuration name="ThirdlabOPI [history]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -187,12 +168,57 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
+    <configuration name="ThirdlabOPI [labHistory]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="labHistory" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ThirdlabOPI [labTeam]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="labTeam" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ThirdlabOPI [labTeam]" />
+        <item itemvalue="Gradle.ThirdlabOPI [labHistory]" />
         <item itemvalue="Gradle.ThirdlabOPI [history]" />
         <item itemvalue="Gradle.ThirdlabOPI [Build]" />
         <item itemvalue="Gradle.ThirdlabOPI [BuildProject]" />
-        <item itemvalue="Gradle.ThirdlabOPI [compileCodeOfProject]" />
       </list>
     </recent_temporary>
   </component>
@@ -214,7 +240,31 @@
       <option name="project" value="LOCAL" />
       <updated>1747695565506</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="r8">
+      <option name="closed" value="true" />
+      <created>1747696162782</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1747696162782</updated>
+    </task>
+    <task id="LOCAL-00003" summary="r9">
+      <option name="closed" value="true" />
+      <created>1747696183418</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747696183418</updated>
+    </task>
+    <task id="LOCAL-00004" summary="last&amp;">
+      <option name="closed" value="true" />
+      <created>1747696336802</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1747696336802</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -233,6 +283,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="r7" />
-    <option name="LAST_COMMIT_MESSAGE" value="r7" />
+    <MESSAGE value="r8" />
+    <MESSAGE value="r9" />
+    <MESSAGE value="last&amp;" />
+    <option name="LAST_COMMIT_MESSAGE" value="last&amp;" />
   </component>
 </project>
