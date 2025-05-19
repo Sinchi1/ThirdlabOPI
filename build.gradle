@@ -213,9 +213,8 @@ tasks.register("labReport") {
     }
 }
 
-tasks.register("alt") {
+tasks.register("labAlt") {
     group = "lab"
-    description = "Создает альтернативную версию программы с переименованными идентификаторами и структурами папок"
 
     def replacements = [
             "Point": "dot",
@@ -268,7 +267,6 @@ tasks.register("alt") {
 }
 tasks.register("labHistory") {
     group = "lab"
-    description = "Поиск последней рабочей версии проекта и сохранение diff с первой неработающей"
 
     doLast {
         def revisions = "git rev-list HEAD".execute().text.readLines()
@@ -312,5 +310,38 @@ tasks.register("labHistory") {
         println "Последняя рабочая ревизия: ${lastWorkingRevision.substring(0, 7)}"
         println "Первая неработающая ревизия: ${nextRevision.substring(0, 7)}"
         println "Diff сохранен в: ${diffFile.absolutePath}"
+    }
+}
+
+tasks.register("labTeam") {
+    group = "lab"
+    def zipFile = file("$buildDir/versions.zip")
+
+    dependsOn("labClean")
+    doLast {
+        def revisions = "git rev-list --max-count=3 HEAD".execute().text.readLines()
+        if (zipFile.exists()) {
+            zipFile.delete()
+        }
+        def zipStream = new ZipOutputStream(new FileOutputStream(zipFile))
+        revisions.each { rev ->
+            println "Check out $rev"
+            def checkout = ["git", "checkout", rev].execute()
+            checkout.waitFor()
+
+            def result = ["cmd", "/c", "gradlew.bat", "labBuild"].execute()
+            def code = result.waitFor()
+
+            def jarFile = new File("build/lab4-${version}.jar")
+            if (!jarFile.exists()) {
+                throw new GradleException("Нет jar файла в $dir")
+            }
+            def entry = new ZipEntry(rev+".jar")
+            zipStream.putNextEntry(entry)
+            zipStream.write(jarFile.bytes)
+            zipStream.closeEntry()
+        }
+
+        zipStream.close()
     }
 }
