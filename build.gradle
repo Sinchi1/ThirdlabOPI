@@ -1,0 +1,77 @@
+plugins {
+    id 'java'
+}
+
+ext {
+    hibernateVersion = '6.4.4.Final'
+    postgresqlVersion = '42.7.3'
+    jwtVersion = '4.4.0'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // Jakarta EE
+    implementation 'jakarta.platform:jakarta.jakartaee-api:10.0.0'
+
+    // Hibernate
+    implementation "org.hibernate.orm:hibernate-core:${hibernateVersion}"
+
+    // PostgreSQL
+    implementation "org.postgresql:postgresql:${postgresqlVersion}"
+
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
+
+    // JWT for authentication
+    implementation "com.auth0:java-jwt:${jwtVersion}"
+
+    // JSON-B
+    implementation 'jakarta.json.bind:jakarta.json.bind-api:3.0.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.register('compileCodeOfProject', JavaCompile) {
+    description = 'Компиляция исходных кодов проекта'
+    source = sourceSets.main.java
+    classpath = sourceSets.main.compileClasspath
+    destinationDirectory = file("$buildDir/classes/java/main")
+}
+
+// Задача build — зависит от compileCode и создает jar
+tasks.register("Build", Jar) {
+    group = "build"
+    description = "Компиляция исходников и сборка jar"
+
+    dependsOn("classes") // обязательно компилируем перед упаковкой
+
+    archiveBaseName.set("ThirdlabOPI")
+    archiveVersion.set("1.0")
+    destinationDirectory.set(file("$buildDir/libs"))
+
+    from(sourceSets.main.output) // скомпилированные классы
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+
+
+
+tasks.register('cleanProject', Delete) {
+    description = 'Удаление скомпилированных классов и временных файлов'
+    delete rootProject.buildDir
+}
