@@ -1,3 +1,12 @@
+import org.xml.sax.SAXException
+import javax.xml.parsers.DocumentBuilderFactory
+import org.xml.sax.SAXException
+import java.io.IOException
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
+
 plugins {
     id 'java'
 }
@@ -41,37 +50,275 @@ test {
     useJUnitPlatform()
 }
 
-tasks.register('compileCodeOfProject', JavaCompile) {
-    description = 'Компиляция исходных кодов проекта'
+def music = file("src/main/resources/mp3/meow.mp3")
+def dirWithLoc = file("src/main/resources/loc")
+
+tasks.register('labCompile', JavaCompile){
+    group = "lab"
     source = sourceSets.main.java
     classpath = sourceSets.main.compileClasspath
-    destinationDirectory = file("$buildDir/classes/java/main")
+    destinationDirectory = file("classes/java")
 }
-
-// Задача build — зависит от compileCode и создает jar
-tasks.register("Build", Jar) {
-    group = "build"
-    description = "Компиляция исходников и сборка jar"
-
-    dependsOn("classes") // обязательно компилируем перед упаковкой
-
-    archiveBaseName.set("ThirdlabOPI")
-    archiveVersion.set("1.0")
-    destinationDirectory.set(file("$buildDir/libs"))
-
-    from(sourceSets.main.output) // скомпилированные классы
-
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+tasks.register("labBuild", Jar){
+    group = "lab"
+    dependsOn("classes")
+    destinationDirectory.set(file("/artifacts"))
+    from{
+        sourceSets.main.output
+        configurations.runtimeClasspath.collect {if (it.isDirectory()) it else zipTree(it)}
     }
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
-
-
-
-
-tasks.register('cleanProject', Delete) {
-    description = 'Удаление скомпилированных классов и временных файлов'
+tasks.register("labClean", Delete){
+    group = "lab"
     delete rootProject.buildDir
+    delete file("/artifacts")
+}
+
+tasks.register("labLocaleToASCII") {
+    group = "lab"
+    fileTree(dirWithLoc).matching { include '**/*.properties' }.each { File file ->
+        def asciiText = file.getText("UTF-8").toCharArray().collect {
+            (it as int) > 127 ? String.format("\\u%04x", (int) it) : it
+        }.join("")
+        file.text = asciiText
+        println "Converted: ${file.name}"
+    }
+}
+
+tasks.register("labMusic") {
+    group = "lab"
+    dependsOn(labBuild)
+    ["cmd", "/c", "start", "wmplayer", music].execute()
+}
+
+import javax.xml.parsers.DocumentBuilderFactory
+import org.xml.sax.SAXException
+
+tasks.register("labXml") {
+    group = "lab"
+
+    def factory = DocumentBuilderFactory.newInstance()
+    def builder = factory.newDocumentBuilder()
+    def error = false
+
+    def xmlFiles = fileTree(projectDir) {
+        include '**/*.xml'
+    }
+
+    if (!xmlFiles.empty) {
+        xmlFiles.each { file ->
+            try {
+                builder.parse(file)
+            } catch (SAXException | IOException e) {
+                error = true
+                println "Ошибка в файле ${file}: ${e.message}"
+            }
+        }
+    }
+
+    if (!error) {
+        println "\nВсе XML-файлы валидны."
+    }
+}
+
+tasks.register("labScp"){
+    group = "lab"
+
+    dependsOn(labBuild)
+
+    doLast {
+        def jarFile = file("artifacts/ThirdlabOPI-1.0-SNAPSHOT.jar")
+
+        if (!jarFile.exists()) {
+            throw new GradleException("JAR-файл не найден")
+        }
+
+        def command = ["scp", "-P", "2222", jarFile.absolutePath, "s413818@se.ifmo.ru:~/"]
+        println "Ожидаем отклика сервера."
+
+        def process = new ProcessBuilder(command)
+                .inheritIO()
+                .start()
+
+        def exitCode = process.waitFor()
+
+        if (exitCode != 0) {
+            throw new GradleException("Ошибка SCP, код возврата: $exitCode")
+        }
+    }
+}
+
+tasks.register("labEnv") {
+    group = "lab"
+
+    def javaVersion = "17"
+    def jvmArgs = ["-XX:MaxHeapSize=1G", "-XX:MaxMetaspaceSize=128m"]
+    def javaHomeEnv = System.getenv("JAVA_HOME_${javaVersion}") ?: System.getenv("JAVA_HOME")
+
+
+    dependsOn(labBuild)
+
+    doLast {
+        if (javaHomeEnv == null) {
+            throw new GradleException("JAVA_HOME_${javaVersion} не установлена в переменных окружения.")
+        }
+
+        def javaExecutable = "${javaHomeEnv}${File.separator}bin${File.separator}java"
+
+        def jarFile = file("artifacts/ThirdlabOPI-1.0-SNAPSHOT.jar")
+        if (!jarFile.exists()) {
+            throw new GradleException("JAR-файл не найден: ${jarFile}. Сначала выполните сборку проекта.")
+        }
+
+        def command = [javaExecutable] + jvmArgs + ["-jar", jarFile.absolutePath]
+
+        println "Запускаем команду: ${command.join(' ')}"
+
+        def process = new ProcessBuilder(command as String[])
+                .inheritIO()
+                .start()
+
+        def exitCode = process.waitFor()
+
+        if (exitCode != 0) {
+            println "Процесс завершился с кодом: ${exitCode}"
+        }
+    }
+}
+
+tasks.register("labReport") {
+    group = "lab"
+
+    dependsOn(test)
+
+    doLast {
+        def srcDir = file("$buildDir/build/test-results/test")
+        def destDir = file("$buildDir/reports")
+
+        if (!srcDir.exists() || srcDir.listFiles().length == 0) {
+            println "Test report not found"
+            return
+        }
+
+        copy {
+            from srcDir
+            into destDir
+        }
+
+        ["git", "add", "reports"].execute().waitFor()
+        def commit = ["git", "commit", "-m", "added JUnit XML test report"].execute()
+        commit.waitFor()
+    }
+}
+
+tasks.register("alt") {
+    group = "lab"
+    description = "Создает альтернативную версию программы с переименованными идентификаторами и структурами папок"
+
+    def replacements = [
+            "Point": "dot",
+            "User": "client",
+            "PointService": "helper",
+            "JwtUtil": "jjjjwwwtttt",
+            "PasswordHasher": "kriptography",
+            "AreaChecker": "diffMath",
+
+            "org/example": "alt/example",
+            "ejb": "altEjb",
+            "entity": "altEntity",
+            "exception": "altException"
+    ]
+
+    dependsOn(labBuild)
+
+    doLast {
+        def tempSrcDir = file("${buildDir}/alt-src")
+        delete tempSrcDir
+
+        copy {
+            from "src/main/java"
+            into tempSrcDir
+            eachFile { file ->
+                def newPath = file.path
+                replacements.each { original, replacement ->
+                    newPath = newPath.replace(original, replacement)
+                }
+                file.path = newPath
+            }
+            includeEmptyDirs = false
+        }
+
+        fileTree(tempSrcDir).each { file ->
+            if (file.isFile() && file.name.endsWith('.java')) {
+                def content = file.text
+                replacements.each { original, replacement ->
+                    if (original.contains('/')) {
+                        content = content.replace(original.replace('/', '.'), replacement.replace('/', '.'))
+                    }
+                    else {
+                        content = content.replaceAll(/\b${original}\b/, replacement)
+                    }
+                }
+                file.text = content
+            }
+        }
+    }
+}
+tasks.register('history') {
+    group = 'lab'
+    description = 'Находит последнюю рабочую версию, проверяя коммиты через git'
+
+    doLast {
+        def commits = []
+        def commitProcess = "git log --pretty=format:%H".execute()
+        commitProcess.in.eachLine { line -> commits.add(line) }
+        commitProcess.waitFor()
+
+        if (commits.empty) {
+            throw new GradleException("Не найдено коммитов в репозитории")
+        }
+
+        def lastWorkingCommit = null
+        def firstBrokenCommit = null
+        def currentBranch = "git rev-parse --abbrev-ref HEAD".execute().text.trim()
+
+        try {
+            for (commit in commits) {
+                println "Проверяем коммит ${commit.substring(0, 7)}..."
+
+                def checkoutProc = "git checkout $commit --force".execute()
+                checkoutProc.waitFor()
+
+                try {
+                    exec {
+                        commandLine 'gradle', 'compileJava'
+                        ignoreExitValue = false
+                    }
+                    lastWorkingCommit = commit
+                    println "✅ Успешная компиляция"
+                    break
+                } catch (Exception e) {
+                    firstBrokenCommit = commit
+                    println "❌ Ошибка компиляции"
+                }
+            }
+
+            if (lastWorkingCommit && firstBrokenCommit) {
+                def diffFile = file("${buildDir}/broken-changes.diff")
+                def diffProc = "git diff $lastWorkingCommit $firstBrokenCommit".execute()
+                diffFile.text = diffProc.text
+                println "\nРезультат:"
+                println "Последняя рабочая версия: ${lastWorkingCommit.substring(0, 7)}"
+                println "Первая неработающая версия: ${firstBrokenCommit.substring(0, 7)}"
+                println "Diff сохранен в ${diffFile.absolutePath}"
+            }
+
+        } finally {
+            def returnProc = "git checkout $currentBranch --force".execute()
+            returnProc.waitFor()
+            println "\nВозврат на ветку: $currentBranch"
+        }
+    }
 }
