@@ -1,10 +1,7 @@
-import org.xml.sax.SAXException
-import javax.xml.parsers.DocumentBuilderFactory
-import org.xml.sax.SAXException
-import java.io.IOException
-import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import javax.xml.parsers.DocumentBuilderFactory
+import org.xml.sax.SAXException
 
 
 plugins {
@@ -25,25 +22,25 @@ repositories {
     mavenCentral()
 }
 
+System.setProperty("webdriver.chrome.driver", "chromedriver.exe");
+
+
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
 
-    // Jakarta EE
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.21.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+
     implementation 'jakarta.platform:jakarta.jakartaee-api:10.0.0'
 
-    // Hibernate
     implementation "org.hibernate.orm:hibernate-core:${hibernateVersion}"
 
-    // PostgreSQL
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
 
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
 
-    // JWT for authentication
     implementation "com.auth0:java-jwt:${jwtVersion}"
 
-    // JSON-B
     implementation 'jakarta.json.bind:jakarta.json.bind-api:3.0.0'
 }
 
@@ -53,9 +50,8 @@ test {
 
 def music = file("src/main/resources/mp3/meow.mp3")
 def dirWithLoc = file("src/main/resources/loc")
-def warFile = file("$buildDir/libs/${project.name}.war")
+def warFile = file("$buildDir/libs/ThirdlabOPI-1.0-SNAPSHOT.war")
 def wildFly = file("wildfly")
-
 
 tasks.register('labCompile', JavaCompile){
     group = "lab"
@@ -63,6 +59,7 @@ tasks.register('labCompile', JavaCompile){
     classpath = sourceSets.main.compileClasspath
     destinationDirectory = file("classes/java")
 }
+
 tasks.register("labBuild", Jar){
     group = "lab"
     dependsOn("classes")
@@ -100,6 +97,10 @@ tasks.register("labRunWildFly") {
 
         exec {
             commandLine "cmd", "/c", script.absolutePath
+            standardInput = System.in
+            standardOutput = System.out
+            errorOutput = System.err
+            ignoreExitValue = true
         }
     }
 }
@@ -128,8 +129,6 @@ tasks.register("labMusic") {
     ["cmd", "/c", "start", "wmplayer", music].execute()
 }
 
-import javax.xml.parsers.DocumentBuilderFactory
-import org.xml.sax.SAXException
 
 tasks.register("labXml") {
     group = "lab"
@@ -152,7 +151,6 @@ tasks.register("labXml") {
             }
         }
     }
-
     if (!error) {
         println "\nВсе XML-файлы валидны."
     }
@@ -160,9 +158,7 @@ tasks.register("labXml") {
 
 tasks.register("labScp"){
     group = "lab"
-
     dependsOn(labBuild)
-
     doLast {
         def jarFile = file("artifacts/ThirdlabOPI-1.0-SNAPSHOT.jar")
 
@@ -192,7 +188,6 @@ tasks.register("labEnv") {
     def jvmArgs = ["-XX:MaxHeapSize=1G", "-XX:MaxMetaspaceSize=128m"]
     def javaHomeEnv = System.getenv("JAVA_HOME_${javaVersion}") ?: System.getenv("JAVA_HOME")
 
-
     dependsOn(labBuild)
 
     doLast {
@@ -201,11 +196,6 @@ tasks.register("labEnv") {
         }
 
         def javaExecutable = "${javaHomeEnv}${File.separator}bin${File.separator}java"
-
-        def jarFile = file("artifacts/ThirdlabOPI-1.0-SNAPSHOT.jar")
-        if (!jarFile.exists()) {
-            throw new GradleException("JAR-файл не найден: ${jarFile}. Сначала выполните сборку проекта.")
-        }
 
         def command = [javaExecutable] + jvmArgs + ["-jar", jarFile.absolutePath]
 
@@ -223,28 +213,67 @@ tasks.register("labEnv") {
     }
 }
 
+tasks.register("labDiff") {
+    group = "lab"
+
+        def classes = "PointService UserService Point User".split(" ") as List
+
+        boolean hasChanges = false
+
+        classes.each { className ->
+            def cmd = ["git", "diff", "--", "src/**/" + className]
+            def p = cmd.execute()
+            def output = p.inputStream.text
+            p.waitFor()
+
+            if (output.trim()) {
+                println "Изменения ${className}:\n$output"
+                hasChanges = true
+            }
+        }
+
+        if (hasChanges) {
+            def commitCmd = ["git", "commit", "--allow-empty", "-m", "diff command commit"]
+            def commitProc = new ProcessBuilder(commitCmd)
+                    .inheritIO()
+                    .start()
+            commitProc.waitFor()
+        } else {
+            println "Нет изменений"
+        }
+
+}
+
 tasks.register("labReport") {
     group = "lab"
 
     dependsOn(test)
 
     doLast {
-        def srcDir = file("$buildDir/build/test-results/test")
-        def destDir = file("$buildDir/reports")
+        def srcDir = file("$buildDir/test-results/test")
+        def destDir = file("$buildDir/reports/test-results")
 
-        if (!srcDir.exists() || srcDir.listFiles().length == 0) {
-            println "Test report not found"
-            return
-        }
+        delete destDir
+        mkdir destDir
 
         copy {
             from srcDir
             into destDir
+            include "**/*.xml"
         }
 
-        ["git", "add", "reports"].execute().waitFor()
-        def commit = ["git", "commit", "-m", "added JUnit XML test report"].execute()
-        commit.waitFor()
+
+        if (file(".git").exists()) {
+            def gitAdd = ["git", "add", "build/reports/test-results"].execute()
+            gitAdd.waitFor()
+
+            def gitCommit = ["git", "commit", "-m", "Automatic test report update"].execute()
+            def commitExit = gitCommit.waitFor()
+
+            if (commitExit != 0) {
+                println "Нет изменений"
+            }
+        }
     }
 }
 
@@ -300,6 +329,7 @@ tasks.register("labAlt") {
         }
     }
 }
+
 tasks.register("labHistory") {
     group = "lab"
 

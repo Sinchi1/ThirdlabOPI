@@ -23,14 +23,12 @@ public class PointService {
 
         long startTime = System.nanoTime();
 
-        User user = em.find(User.class, userId); // Используем текущую сессию для загрузки
+        User user = em.find(User.class, userId);
         if (user == null) {
             throw new RuntimeException("User not found");
         }
 
-//        double y1 = Double.parseDouble(y) * Double.parseDouble(r);
         double y1 = Double.parseDouble(y);
-//        double x1 = Double.parseDouble(x) * Double.parseDouble(r);
         double x1 = Double.parseDouble(x);
         Point point = new Point(x1, y1, Double.parseDouble(r));
         point.setUser(user);
