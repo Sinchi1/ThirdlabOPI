@@ -44,12 +44,16 @@ public class PointResource {
     }
 
     @GET
-    public Response getPoints(@Context HttpHeaders headers) {
+    public Response getPoints(
+            @Context HttpHeaders headers,
+            @QueryParam("offset") @DefaultValue("0") int offset,
+            @QueryParam("limit") @DefaultValue("100") int limit
+    ) {
         try {
             String token = extractToken(headers);
             Long userId = JwtUtil.getUserIdFromToken(token);
 
-            List<Point> points = pointService.getUserPoints(userId);
+            List<Point> points = pointService.getUserPoints(userId, offset, limit);
             return Response.ok(points).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -57,6 +61,7 @@ public class PointResource {
                     .build();
         }
     }
+
 
     @DELETE
     public Response clearPoints(@Context HttpHeaders headers) {

@@ -36,21 +36,23 @@ public class TestFunctional {
         driver = new ChromeDriver();
     }
 
-//    @Test
-//    public void testSuccessfulRegistration() {
-//        driver.get("http://127.0.0.1:8080/web-lab4/");
-//        driver.findElement(By.xpath("//button[contains(text(), 'Login In')]")).click();
-//
-//        driver.findElement(By.xpath("//button[contains(text(), \"Don't have an account\")]")).click();
-//
-//        driver.findElement(By.id("register_login_input")).sendKeys("newuser");
-//        driver.findElement(By.id("register_password_input")).sendKeys("password123");
-//        driver.findElement(By.id("register_password_second_input")).sendKeys("password123");
-//
-//        driver.findElement(By.xpath("//button[contains(text(), 'Register')]")).click();
-//
-//        Assertions.assertTrue(driver.getCurrentUrl().contains("graph"));
-//    }
+    @Test
+    public void testSuccessfulRegistration() {
+        driver.get("http://127.0.0.1:8080/web-lab4/");
+        driver.findElement(By.xpath("//button[contains(text(), 'Login In')]")).click();
+
+        driver.findElement(By.xpath("//button[contains(text(), \"Don't have an account\")]")).click();
+
+        driver.findElement(By.id("register_login_input")).sendKeys("newuser3");
+        driver.findElement(By.id("register_password_input")).sendKeys("password12345");
+        driver.findElement(By.id("register_password_second_input")).sendKeys("password12345");
+
+        driver.findElement(By.xpath("//button[contains(text(), 'Register')]")).click();
+
+        driver.get("http://127.0.0.1:8080/web-lab4/#/graph");
+
+        assertEquals("http://127.0.0.1:8080/web-lab4/#/graph", driver.getCurrentUrl());
+    }
 
     @Test
     public void testRegistrationWithShortPassword() {

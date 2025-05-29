@@ -15,6 +15,7 @@ ext {
     jwtVersion = '4.4.0'
 }
 
+
 group = 'org.example'
 version = '1.0-SNAPSHOT'
 
@@ -105,10 +106,9 @@ tasks.register("labRunWildFly") {
     }
 }
 
-
 tasks.register("labClean", Delete){
     group = "lab"
-    delete rootProject.buildDir
+    delete rootProject
     delete file("/artifacts")
 }
 
@@ -197,7 +197,7 @@ tasks.register("labEnv") {
 
         def javaExecutable = "${javaHomeEnv}${File.separator}bin${File.separator}java"
 
-        def command = [javaExecutable] + jvmArgs + ["-jar", jarFile.absolutePath]
+        def command = [javaExecutable] + jvmArgs + ["-jar", jarFile]
 
         println "Запускаем команду: ${command.join(' ')}"
 
@@ -242,6 +242,55 @@ tasks.register("labDiff") {
             println "Нет изменений"
         }
 
+}
+import java.security.MessageDigest
+
+tasks.register("labDoc") {
+    group = "lab"
+
+    dependsOn(labCompile)
+
+    doLast {
+        def buildClasses = file("$buildDir/classes")
+        def javadocDir = file("$buildDir/docs/javadoc")
+        def javadocZip = file("$buildDir/javadoc.zip")
+        def manifestFile = file("$buildDir/manifest.mf")
+        ant.javadoc(destdir: javadocDir, sourcepath: "src/main/java", classpath: configurations.compileClasspath.asPath) {
+            classpath {
+                files("$buildDir/classes")
+            }
+        }
+
+        def zipStream = new ZipOutputStream(new FileOutputStream(javadocZip))
+        javadocDir.eachFileRecurse { file ->
+            if (file.isFile()) {
+                def entryName = file.path.substring(javadocDir.path.length() + 1).replace("\\", "/")
+                def zipEntry = new ZipEntry(entryName)
+                zipStream.putNextEntry(zipEntry)
+                zipStream.write(file.bytes)
+                zipStream.closeEntry()
+            }
+        }
+        zipStream.close()
+
+        def filesToHash = fileTree(buildClasses) + javadocZip
+        def digests = [:]
+        ['MD5', 'SHA-1'].each { algo ->
+            digests[algo] = filesToHash.collect { file ->
+                def md = MessageDigest.getInstance(algo)
+                md.update(file.bytes)
+                "${algo}: ${file.name} = " + md.digest().encodeHex().toString()
+            }.join("\n")
+        }
+
+        def manifestContent = """\
+Manifest-Version: 1.0
+Created-By: 17.0.11 (Oracle Corporation)
+${digests.collect { k, v -> "$k-Digest: \n$v" }.join("\n\n")}
+""".stripIndent()
+
+        manifestFile.text = manifestContent
+    }
 }
 
 tasks.register("labReport") {
@@ -298,7 +347,6 @@ tasks.register("labAlt") {
 
     doLast {
         def tempSrcDir = file("${buildDir}/alt-src")
-        delete tempSrcDir
 
         copy {
             from "src/main/java"
